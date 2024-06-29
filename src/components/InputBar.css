@@ -1,0 +1,7 @@
+.input-bar {
+    margin-top: 20px;
+}
+.inside-input {
+    display: flex;
+    flex-direction: row;
+}
