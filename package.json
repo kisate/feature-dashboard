@@ -2,6 +2,7 @@
   "name": "feature-explanation-dashboard",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://kisate.github.io/feature-dashboard",
   "dependencies": {
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
@@ -19,6 +20,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -43,6 +46,7 @@
     ]
   },
   "devDependencies": {
-    "@types/react-plotly.js": "^2.6.3"
+    "@types/react-plotly.js": "^2.6.3",
+    "gh-pages": "^6.1.1"
   }
 }
