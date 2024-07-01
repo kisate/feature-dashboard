@@ -21,15 +21,36 @@ function MaxActivatingExample({ tokens, values }: { tokens: string[], values: nu
     );
 }
 
-function SelfEExample( {example, scale} : {example: string, scale: number} ) {
+function SelfEExample( {example, scale, isHighlighted} : {example: string, scale: number, isHighlighted: boolean} ) {
     return (
-        <div className="example">
+        <div className="example" style={
+            isHighlighted ? {backgroundColor: 'rgba(0, 0, 255, 0.5)'} : {}
+        } >
             Scale: {scale.toFixed(2)} | "{example}
         </div>
     );
 }
 
 function DashboardItem({ feature }: { feature: Feature }) {
+    const [expanded, setExpanded] = React.useState(false);
+    const [explanation_idx, setExplanationIdx] = React.useState <number | null> (null);
+    const handleChange = (event: React.SyntheticEvent, isExpanded: boolean) => {
+        setExpanded(isExpanded ? true : false);
+        if (!isExpanded) {
+            setExplanationIdx(null);
+        }
+    };
+
+
+    const handlePlotClick = (event: any) => {
+        const number = event.points[0].pointIndex;
+        const fraction = number / feature.scales.length;
+
+        const explanation_idx = Math.floor(fraction * feature.selfe_explanations.length);
+        setExpanded(true);
+        setExplanationIdx(explanation_idx);
+    }
+
     return (
         <Grid container spacing={2}>
             <Grid item xs={3}>
@@ -53,6 +74,7 @@ function DashboardItem({ feature }: { feature: Feature }) {
                         name: 'Entropy',
                         type: 'scatter',
                         mode: 'lines+markers',
+                        yaxis: 'y2',
                         marker: {color: 'green'},
                     },
                     {
@@ -61,6 +83,7 @@ function DashboardItem({ feature }: { feature: Feature }) {
                         name: 'Cross-entropy',
                         type: 'scatter',
                         mode: 'lines+markers',
+                        yaxis: 'y3',
                         marker: {color: 'orange'},
                     }
                     ]}
@@ -75,23 +98,42 @@ function DashboardItem({ feature }: { feature: Feature }) {
                             t: 50,
                             pad: 4
                           },
-                        legend: {x: 0.4, y: 0.5},
+                        legend: {x: 0.4, y: 0},
                         xaxis: {title: 'Scale'},
-                        yaxis: {showticklabels: false}
+                        yaxis: {showticklabels: false},
+                        yaxis2: {
+                            showticklabels: false,
+                            anchor: 'x',
+                            overlaying: 'y',
+                            side: 'left'
+                        },
+                        yaxis3: {
+                            showticklabels: false,
+                            anchor: 'x',
+                            overlaying: 'y',
+                            side: 'left'
+                        },
                     } }
                     style={{borderRadius: '0px'}}
+                    onClick={handlePlotClick}
                 />
             </Grid>
             <Grid item xs={9}>
                 <p>{feature.autoint_explanation}</p>
-                <Accordion>
+                <Accordion
+                    expanded={expanded}
+                    onChange={handleChange}
+                >
                     <AccordionSummary
                         expandIcon={<ExpandMoreIcon />}>
-                        <SelfEExample example={feature.selfe_explanations[0]} scale={feature.selfe_scales[0]} />
+                        <SelfEExample example={feature.selfe_explanations[0]} scale={feature.selfe_scales[0]} isHighlighted={false}/>
                     </AccordionSummary>
                     <AccordionDetails>
                         {feature.selfe_explanations.map((explanation, i) => (
-                            <SelfEExample key={i}  example={explanation} scale={feature.selfe_scales[i]}/>
+                            <SelfEExample key={i}  example={explanation} scale={feature.selfe_scales[i]} 
+                            isHighlighted = {
+                                explanation_idx === feature.original_idx[i]
+                            }/>
                         ))}
                     </AccordionDetails>
                 </Accordion>

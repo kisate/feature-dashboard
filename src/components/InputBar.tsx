@@ -10,7 +10,6 @@ const darkTheme = createTheme({
     mode: 'dark',
   },
 });
-
 export function InputBar({
   setOffset,
   setLength,
@@ -44,7 +43,7 @@ export function InputBar({
           <NumberInput
             id="offset-input"
             // label="Offset" 
-            value={1000}
+            value={offset}
             min={0}
             max={8000}
             onChange={(e, v) => {
@@ -54,7 +53,7 @@ export function InputBar({
           <div>Length:</div>
           <NumberInput
             id="length-input"
-            defaultValue={10}
+            defaultValue={length}
             min={1}
             max={100}
             onChange={(e, v) => {
@@ -64,7 +63,7 @@ export function InputBar({
           <div>Probe Layer:</div>
           <NumberInput
             id="probe-layer-input"
-            defaultValue={16}
+            defaultValue={probeLayer}
             min={0}
             max={16}
             onChange={(e, v) => {

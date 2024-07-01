@@ -16,6 +16,7 @@ export interface Feature {
     entropy: number[];
     cross_entropy: number[];
     optimal_scale: number;
+    original_idx: number[];
 }
 
 function process_max_acts(max_acts: any): [string[][], number[][]] {
@@ -45,7 +46,7 @@ function sort_by_self_similarity(texts: any[], scales: number[], self_similarity
     return sorted_texts;
 }
 
-function process_selfe_explanations(row: any, probe_layer: number): [string[], number[]] {
+function process_selfe_explanations(row: any, probe_layer: number): [string[], number[], number[]] {
     // Match the self-explanations with the scales and sort row.generations.texts using row.generations.scales
 
     const max_scale = row.settings.max_scale;
@@ -57,15 +58,16 @@ function process_selfe_explanations(row: any, probe_layer: number): [string[], n
     const self_similarity = row.scale_tuning.selfsims[probe_layer]
 
     const sorted_texts = sort_by_self_similarity(texts, scales, self_similarity);
-    const sorted_scales = sort_by_self_similarity(scales, scales, self_similarity);
+    const sorted_scales = sort_by_self_similarity(scales, scales, self_similarity).map((s) => s * (max_scale - min_scale) + min_scale);
+    const original_idx = sort_by_self_similarity(Array.from({length: scales.length}, (_, i) => i), scales, self_similarity);
 
-    return [sorted_texts, sorted_scales];
+    return [sorted_texts, sorted_scales, original_idx];
 }
 
 function row_to_feature(row: any, probe_layer: number): Feature {
 
     const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
-    const [selfe_explanations, selfe_scales] = process_selfe_explanations(row, probe_layer);
+    const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(row, probe_layer);
 
     return {
         layer: 12,
@@ -79,7 +81,8 @@ function row_to_feature(row: any, probe_layer: number): Feature {
         scales: row.scale_tuning.scales,
         self_similarity: row.scale_tuning.selfsims[probe_layer],
         entropy: row.scale_tuning.entropy,
-        cross_entropy: row.scale_tuning.crossents[0]
+        cross_entropy: row.scale_tuning.crossents[0],
+        original_idx: original_idx
     };
 }
 
