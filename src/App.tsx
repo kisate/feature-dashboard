@@ -3,6 +3,7 @@ import { InputBar } from './components/InputBar';
 import { Dashboard } from './components/Dashboard';
 import React from 'react';
 import { Feature, get_feature_sample } from './dataset';
+import { Button } from '@mui/material';
 
 
 function App() {
@@ -16,9 +17,14 @@ function App() {
   const [alpha, setAlpha] = React.useState(0.4);
   const [requiredScale, setRequiredScale] = React.useState(10.0);
 
+  const handleNextPage = () => {
+    setOffset(prevOffset => prevOffset + length);
+  };
+
   React.useEffect(() => {
 
     console.log("Fetching data");
+    console.log(offset)
 
     setLoading(true);
     
@@ -47,6 +53,7 @@ function App() {
         />
         {loading ? <p>Loading...</p> : <Dashboard features={features} />}
         {/* <Dashboard features={features} /> */}
+        <Button variant="outlined" onClick={handleNextPage}>Next Page</Button>
       </header>
     </div>
   );

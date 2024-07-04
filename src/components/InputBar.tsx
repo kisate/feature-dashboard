@@ -1,7 +1,7 @@
 import { Box, MenuItem, Select, TextField, Typography, FormControl, InputLabel } from "@mui/material";
 import "./InputBar.css";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 const darkTheme = createTheme({
   palette: {
@@ -46,6 +46,14 @@ export function InputBar({
     const parsedValue = isFloat ? parseFloat(value) : parseInt(value);
     setFunc(isNaN(parsedValue) ? defaultValue : parsedValue);
   };
+
+  useEffect(() => {
+    setLocalOffset(offset.toString());
+    setLocalLength(length.toString());
+    setLocalProbeLayer(probeLayer.toString());
+    setLocalAlpha(alpha.toString());
+    setLocalRequiredScale(requiredScale.toString());
+  }, [offset, length, probeLayer, layer, alpha, requiredScale]);
 
   return (
     <div className="input-bar">
