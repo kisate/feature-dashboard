@@ -13,7 +13,7 @@ function App() {
   const [probeLayer, setProbeLayer] = React.useState(16);
   const [loading, setLoading] = React.useState(true);
   const [layer, setLayer] = React.useState(6);
-  const [alpha, setAlpha] = React.useState(0.5);
+  const [alpha, setAlpha] = React.useState(0.4);
   const [requiredScale, setRequiredScale] = React.useState(10.0);
 
   React.useEffect(() => {

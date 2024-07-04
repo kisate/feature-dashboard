@@ -157,7 +157,13 @@ function DashboardItem({ feature }: { feature: Feature }) {
                 <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>{feature.autoint_explanation}</Typography>
                 <Accordion expanded={expanded} onChange={handleChange}>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                        <SelfEExample example={feature.selfe_explanations[0]} scale={feature.selfe_scales[0]} isHighlighted={false} />
+                    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                        {feature.selfe_explanations.slice(0, 3).map((explanation, i) => (
+                            <SelfEExample key={i} example={explanation} scale={feature.selfe_scales[i]}
+                                isHighlighted={false}
+                            />
+                        ))}
+                    </div>
                     </AccordionSummary>
                     <AccordionDetails>
                         {feature.selfe_explanations.map((explanation, i) => (
