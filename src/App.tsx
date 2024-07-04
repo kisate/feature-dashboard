@@ -21,6 +21,10 @@ function App() {
     setOffset(prevOffset => prevOffset + length);
   };
 
+  const handlePreviousPage = () => {
+    setOffset(prevOffset => prevOffset - length);
+  }
+
   React.useEffect(() => {
 
     console.log("Fetching data");
@@ -53,7 +57,13 @@ function App() {
         />
         {loading ? <p>Loading...</p> : <Dashboard features={features} />}
         {/* <Dashboard features={features} /> */}
-        <Button variant="outlined" onClick={handleNextPage}>Next Page</Button>
+
+        <div style={{ display: 'flex', flexDirection: 'row' }}>
+          {
+            offset - length >= 0 && <Button variant="outlined" onClick={handlePreviousPage}>Previous Page</Button>
+          }
+          <Button variant="outlined" onClick={handleNextPage}>Next Page</Button>
+        </div>
       </header>
     </div>
   );
