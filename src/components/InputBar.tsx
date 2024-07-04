@@ -16,12 +16,14 @@ export function InputBar({
   setLayer,
   setAlpha,
   setRequiredScale,
+  setTargetFeature,
   offset,
   length,
   probeLayer,
   layer,
   alpha,
-  requiredScale
+  requiredScale,
+  targetFeature
 }: {
   setOffset: (value: number) => void;
   setLength: (value: number) => void;
@@ -29,23 +31,36 @@ export function InputBar({
   setLayer: (value: number) => void;
   setAlpha: (value: number) => void;
   setRequiredScale: (value: number) => void;
+  setTargetFeature: (value: null | number) => void;
   offset: number;
   length: number;
   probeLayer: number;
   layer: number;
   alpha: number;
   requiredScale: number;
+  targetFeature: number | null;
 }) {
   const [localOffset, setLocalOffset] = useState(offset.toString());
   const [localLength, setLocalLength] = useState(length.toString());
   const [localProbeLayer, setLocalProbeLayer] = useState(probeLayer.toString());
   const [localAlpha, setLocalAlpha] = useState(alpha.toString());
   const [localRequiredScale, setLocalRequiredScale] = useState(requiredScale.toString());
+  const [localTargetFeature, setLocalTargetFeature] = useState(targetFeature !== null ? targetFeature.toString() : "");
 
   const handleBlurOrEnter = (setFunc: (value: number) => void, value: string, defaultValue: number, isFloat: boolean = false) => {
     const parsedValue = isFloat ? parseFloat(value) : parseInt(value);
     setFunc(isNaN(parsedValue) ? defaultValue : parsedValue);
   };
+
+  const handleBlurOrEnterTargetFeature = (value: string, defaultValue: number | null) => {
+    console.log(value);
+    if (value === "") {
+      setTargetFeature(defaultValue);
+      return;
+    }
+    const parsedValue = parseInt(value);
+    setTargetFeature(isNaN(parsedValue) ? defaultValue : parsedValue);
+  }
 
   useEffect(() => {
     setLocalOffset(offset.toString());
@@ -156,6 +171,22 @@ export function InputBar({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handleBlurOrEnter(setRequiredScale, localRequiredScale, 10, true);
+              }
+            }}
+            sx={{ minWidth: 100 }}
+          />
+
+          <TextField
+            id="target-feature-input"
+            type="tel"
+            label="Target Feature"
+            value={localTargetFeature}
+            InputProps={{ inputProps: { min: 0} }}
+            onChange={(e) => setLocalTargetFeature(e.target.value)}
+            onBlur={() => handleBlurOrEnterTargetFeature(localTargetFeature, null)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleBlurOrEnterTargetFeature(localTargetFeature, null);
               }
             }}
             sx={{ minWidth: 100 }}

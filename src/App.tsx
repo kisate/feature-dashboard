@@ -2,7 +2,7 @@ import './App.css';
 import { InputBar } from './components/InputBar';
 import { Dashboard } from './components/Dashboard';
 import React from 'react';
-import { Feature, get_feature_sample } from './dataset';
+import { Feature, get_feature_sample, get_feature } from './dataset';
 import { Button } from '@mui/material';
 
 
@@ -16,6 +16,8 @@ function App() {
   const [layer, setLayer] = React.useState(6);
   const [alpha, setAlpha] = React.useState(0.4);
   const [requiredScale, setRequiredScale] = React.useState(10.0);
+  const [targetFeature, setTargetFeature] = React.useState<number | null>(null);
+  const [oldTargetFeature, setOldTargetFeature] = React.useState<number | null>(null);
 
   const handleNextPage = () => {
     setOffset(prevOffset => prevOffset + length);
@@ -31,12 +33,23 @@ function App() {
     console.log(offset)
 
     setLoading(true);
+
+    if (targetFeature !== null) {
+      if (oldTargetFeature !== targetFeature) {
+        get_feature(layer, probeLayer, alpha, requiredScale, targetFeature).then((res) => {
+          setFeatures(res);
+          setLoading(false);
+          setOldTargetFeature(targetFeature);
+        });
+        return;
+      }
+    }
     
     get_feature_sample(layer, offset, length, probeLayer, alpha, requiredScale).then((res) => {
       setFeatures(res);
       setLoading(false);
     });
-  }, [layer, offset, length, probeLayer, alpha, requiredScale]);
+  }, [layer, offset, length, probeLayer, alpha, requiredScale, targetFeature]);
 
   return (
     <div className="App">
@@ -48,12 +61,14 @@ function App() {
           setLayer={setLayer}
           setAlpha={setAlpha}
           setRequiredScale={setRequiredScale}
+          targetFeature={targetFeature}
           offset={offset}
           length={length}
           probeLayer={probeLayer}
           layer={layer}
           alpha={alpha}
           requiredScale={requiredScale}
+          setTargetFeature={setTargetFeature}
         />
         {loading ? <p>Loading...</p> : <Dashboard features={features} />}
         {/* <Dashboard features={features} /> */}

@@ -5,6 +5,11 @@ const base_urls = new Map<number, string>([
     [12, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations-12&config=default&split=train&",],
 ]);
 
+const base_urls_filter = new Map<number, string>([
+    [6, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations&config=default&split=train&where="feature"='],
+    [12, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations-12&config=default&split=train&where="feature"='],
+]);
+
 export interface Feature {
     layer: number;
     feature: number;
@@ -118,6 +123,20 @@ function row_to_feature(row: any, layer: number, probe_layer: number, alpha: num
 export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number): Promise<Feature[]> {
     const base_url = base_urls.get(layer)!;
     const url = base_url + `offset=${offset}&length=${length}`;
+
+    const response = axios.get(url);
+
+    return response.then((res) => {
+        console.log(res.data);
+
+        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale));
+        return features;
+    });
+}
+
+export async function get_feature(layer: number, probe_layer: number, alpha: number, required_scale: number, feature_number: number): Promise<Feature[]> {
+    const base_url = base_urls_filter.get(layer)!;
+    const url = base_url + feature_number;
 
     const response = axios.get(url);
 
