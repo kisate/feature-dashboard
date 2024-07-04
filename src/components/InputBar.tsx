@@ -14,26 +14,36 @@ export function InputBar({
   setLength,
   setProbeLayer,
   setLayer,
+  setAlpha,
+  setRequiredScale,
   offset,
   length,
   probeLayer,
-  layer
+  layer,
+  alpha,
+  requiredScale
 }: {
   setOffset: (value: number) => void;
   setLength: (value: number) => void;
   setProbeLayer: (value: number) => void;
   setLayer: (value: number) => void;
+  setAlpha: (value: number) => void;
+  setRequiredScale: (value: number) => void;
   offset: number;
   length: number;
   probeLayer: number;
   layer: number;
+  alpha: number;
+  requiredScale: number;
 }) {
   const [localOffset, setLocalOffset] = useState(offset.toString());
   const [localLength, setLocalLength] = useState(length.toString());
   const [localProbeLayer, setLocalProbeLayer] = useState(probeLayer.toString());
+  const [localAlpha, setLocalAlpha] = useState(alpha.toString());
+  const [localRequiredScale, setLocalRequiredScale] = useState(requiredScale.toString());
 
-  const handleBlurOrEnter = (setFunc: (value: number) => void, value: string, defaultValue: number) => {
-    const parsedValue = parseInt(value, 10);
+  const handleBlurOrEnter = (setFunc: (value: number) => void, value: string, defaultValue: number, isFloat: boolean = false) => {
+    const parsedValue = isFloat ? parseFloat(value) : parseInt(value);
     setFunc(isNaN(parsedValue) ? defaultValue : parsedValue);
   };
 
@@ -106,6 +116,38 @@ export function InputBar({
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 handleBlurOrEnter(setProbeLayer, localProbeLayer, 16);
+              }
+            }}
+            sx={{ minWidth: 100 }}
+          />
+
+          <TextField
+            id="alpha-input"
+            type="tel"
+            label="Alpha"
+            value={localAlpha}
+            InputProps={{ inputProps: { min: 0, max: 1, step: 0.01 } }}
+            onChange={(e) => setLocalAlpha(e.target.value)}
+            onBlur={() => handleBlurOrEnter(setAlpha, localAlpha, 1, true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleBlurOrEnter(setAlpha, localAlpha, 1, true);
+              }
+            }}
+            sx={{ minWidth: 100 }}
+          />
+
+          <TextField
+            id="required-scale-input"
+            type="tel"
+            label="Required Scale"
+            value={localRequiredScale}
+            InputProps={{ inputProps: { min: 0, max: 200, step: 0.1 } }}
+            onChange={(e) => setLocalRequiredScale(e.target.value)}
+            onBlur={() => handleBlurOrEnter(setRequiredScale, localRequiredScale, 10, true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleBlurOrEnter(setRequiredScale, localRequiredScale, 10, true);
               }
             }}
             sx={{ minWidth: 100 }}

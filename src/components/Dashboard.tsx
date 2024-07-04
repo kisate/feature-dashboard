@@ -104,7 +104,17 @@ function DashboardItem({ feature }: { feature: Feature }) {
                             mode: 'lines+markers',
                             yaxis: 'y3',
                             marker: { color: 'orange' },
+                        },
+                        {
+                            x: feature.scales,
+                            y: feature.selection_metric,
+                            name: 'Selection metric',
+                            type: 'scatter',
+                            mode: 'lines+markers',
+                            yaxis: 'y4',
+                            marker: { color: 'red' },
                         }
+                        
                     ]}
                     layout={{
                         width: 300,
@@ -127,6 +137,12 @@ function DashboardItem({ feature }: { feature: Feature }) {
                             side: 'left'
                         },
                         yaxis3: {
+                            showticklabels: false,
+                            anchor: 'x',
+                            overlaying: 'y',
+                            side: 'left'
+                        },
+                        yaxis4: {
                             showticklabels: false,
                             anchor: 'x',
                             overlaying: 'y',
