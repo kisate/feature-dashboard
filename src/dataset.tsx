@@ -23,7 +23,7 @@ export interface Feature {
 }
 
 function process_max_acts(max_acts: any): [string[][], number[][]] {
-    const tokens: string[][] = max_acts.map((ma: any) => ma.tokens);
+    const tokens: string[][] = max_acts.map((ma: any) => ma.tokens.map((t: any) => t.replace("▁", "")));
     const values: number[][] = max_acts.map((ma: any) => ma.values);
 
     const max_activation = Math.max(...values.map((v) => Math.max(...v)));

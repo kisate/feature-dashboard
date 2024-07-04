@@ -11,9 +11,18 @@ interface DashboardProps {
 
 function MaxActivatingExample({ tokens, values }: { tokens: string[], values: number[] }) {
     return (
-        <div className="example">
+        <div className="example" style={{ fontSize: '0.8rem' }}>
             {tokens.map((token, i) => (
-                <span key={i} style={{ backgroundColor: `rgba(255, 0, 0, ${values[i]})` }}>
+                <span
+                    key={i}
+                    style={{
+                        backgroundColor: `rgba(255, 0, 0, ${values[i]})`,
+                        padding: '2px 4px',
+                        borderRadius: '4px',
+                        marginRight: '2px',
+                        display: 'inline-block'
+                    }}
+                >
                     {token}{" "}
                 </span>
             ))}
@@ -23,7 +32,7 @@ function MaxActivatingExample({ tokens, values }: { tokens: string[], values: nu
 
 function SelfEExample({ example, scale, isHighlighted }: { example: string, scale: number, isHighlighted: boolean }) {
     return (
-        <div className="example" style={isHighlighted ? { backgroundColor: 'rgba(0, 0, 255, 0.5)' } : {}}>
+        <div className="example" style={isHighlighted ? { backgroundColor: 'rgba(0, 0, 255, 0.5)', fontSize: '0.8rem' } : {fontSize: '0.8rem'}}>
             Scale: {scale.toFixed(2)} | "{example}
         </div>
     );
