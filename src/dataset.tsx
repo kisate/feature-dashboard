@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const base_url = "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations&config=default&split=train&"
+const base_urls = new Map<number, string>([
+    [6, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations&config=default&split=train&",],
+    [12, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations-12&config=default&split=train&",],
+]);
 
 export interface Feature {
     layer: number;
@@ -64,13 +67,13 @@ function process_selfe_explanations(row: any, probe_layer: number): [string[], n
     return [sorted_texts, sorted_scales, original_idx];
 }
 
-function row_to_feature(row: any, probe_layer: number): Feature {
+function row_to_feature(row: any, layer: number, probe_layer: number): Feature {
 
     const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
     const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(row, probe_layer);
 
     return {
-        layer: 12,
+        layer: layer,
         feature: row.feature,
         autoint_explanation: row.explanation,
         selfe_explanations: selfe_explanations,
@@ -86,8 +89,8 @@ function row_to_feature(row: any, probe_layer: number): Feature {
     };
 }
 
-export async function get_feature_sample(offset: number, length: number, probe_layer: number): Promise<Feature[]> {
-
+export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number): Promise<Feature[]> {
+    const base_url = base_urls.get(layer)!;
     const url = base_url + `offset=${offset}&length=${length}`;
 
     const response = axios.get(url);
@@ -95,7 +98,7 @@ export async function get_feature_sample(offset: number, length: number, probe_l
     return response.then((res) => {
         console.log(res.data);
 
-        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, probe_layer));
+        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer));
         return features;
     });
 }

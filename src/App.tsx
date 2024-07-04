@@ -12,6 +12,7 @@ function App() {
   const [length, setLength] = React.useState(10);
   const [probeLayer, setProbeLayer] = React.useState(16);
   const [loading, setLoading] = React.useState(true);
+  const [layer, setLayer] = React.useState(6);
 
   React.useEffect(() => {
 
@@ -19,22 +20,24 @@ function App() {
 
     setLoading(true);
     
-    get_feature_sample(offset, length, probeLayer).then((res) => {
+    get_feature_sample(layer, offset, length, probeLayer).then((res) => {
       setFeatures(res);
       setLoading(false);
     });
-  }, [offset, length, probeLayer]);
+  }, [layer, offset, length, probeLayer]);
 
   return (
     <div className="App">
       <header className="App-header">
         <InputBar
-          setOffset={(offset: number) => setOffset(offset)}
+          setOffset={setOffset}
           setLength={setLength}
           setProbeLayer={setProbeLayer}
+          setLayer={setLayer}
           offset={offset}
           length={length}
           probeLayer={probeLayer}
+          layer={layer}
         />
         {loading ? <p>Loading...</p> : <Dashboard features={features} />}
         {/* <Dashboard features={features} /> */}
