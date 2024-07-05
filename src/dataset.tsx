@@ -29,8 +29,24 @@ export interface Feature {
 }
 
 function process_max_acts(max_acts: any): [string[][], number[][]] {
-    const tokens: string[][] = max_acts.map((ma: any) => ma.tokens.map((t: any) => t.replace("▁", "")));
-    const values: number[][] = max_acts.map((ma: any) => ma.values);
+    const rawTokens: string[][] = max_acts.map((ma: any) => ma.tokens.map((t: any) => t.replace("▁", " ")));
+    const rawValues: number[][] = max_acts.map((ma: any) => ma.values);
+
+    const rawTokensJoin = rawTokens.map((t) => t.join(""));
+    // Leave only unique token sequences
+    
+    var tokens = rawTokens.filter((t, i) => rawTokensJoin.indexOf(t.join("")) === i);
+    var values = tokens.map((t) => rawValues[rawTokens.findIndex((rt) => rt.join("") === t.join(""))]);
+
+    const firstNonZero = values.map((v) => v.findIndex((v) => v > 0));
+    const lastNonZero = values.map((v) => v.length - 1 - v.slice().reverse().findIndex((v) => v > 0));
+
+    tokens = tokens.map(
+        (t, i) => t.slice(Math.max(firstNonZero[i] - 10, 0), Math.min(lastNonZero[i] + 10, t.length))
+    );
+    values = values.map(
+        (v, i) => v.slice(Math.max(firstNonZero[i] - 10, 0), Math.min(lastNonZero[i] + 10, v.length))
+    );
 
     const max_activation = Math.max(...values.map((v) => Math.max(...v)));
 

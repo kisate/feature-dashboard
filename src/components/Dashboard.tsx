@@ -17,13 +17,10 @@ function MaxActivatingExample({ tokens, values }: { tokens: string[], values: nu
                     key={i}
                     style={{
                         backgroundColor: `rgba(255, 0, 0, ${values[i]})`,
-                        padding: '2px 4px',
-                        borderRadius: '4px',
-                        marginRight: '2px',
                         display: 'inline-block'
                     }}
                 >
-                    {token}{" "}
+                    {token}
                 </span>
             ))}
         </div>

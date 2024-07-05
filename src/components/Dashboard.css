@@ -3,3 +3,7 @@
 }
 
 body { font-size: 50%; }
+
+.example {
+    white-space: pre-wrap;
+}
