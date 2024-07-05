@@ -11,7 +11,12 @@ interface DashboardProps {
 
 function MaxActivatingExample({ tokens, values }: { tokens: string[], values: number[] }) {
     return (
-        <div className="example" style={{ fontSize: '0.8rem' }}>
+        <div className="example" style={{ 
+            paddingBottom: '0.5rem',
+            paddingTop: '0.5rem',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+            fontSize: '0.8rem' 
+            }}>
             {tokens.map((token, i) => (
                 <span
                     key={i}
@@ -145,6 +150,7 @@ function DashboardItem({ feature }: { feature: Feature }) {
                             overlaying: 'y',
                             side: 'left'
                         },
+                        showlegend: false
                     }}
                     style={{ borderRadius: '0px' }}
                     onClick={handlePlotClick}
