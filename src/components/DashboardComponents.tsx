@@ -1,7 +1,15 @@
 import Plot from "react-plotly.js";
 import { SelfExplanations } from "../dataset";
 
-export function ScaleTuningPlot ( {explanations, handlePlotClick}: {explanations: SelfExplanations, handlePlotClick: (idx: number) => void}) {
+export function ScaleTuningPlot({
+    title,
+    explanations,
+    handlePlotClick
+}: {
+    title: string,
+    explanations: SelfExplanations,
+    handlePlotClick: (idx: number) => void
+}) {
     return <Plot
         data={[
             {
@@ -39,13 +47,13 @@ export function ScaleTuningPlot ( {explanations, handlePlotClick}: {explanations
                 yaxis: 'y4',
                 marker: { color: 'red' },
             }
-            
+
         ]}
         layout={{
             // width: 300,
             height: 300,
             autosize: true,
-            title: 'Scale tuning',
+            title: title,
             margin: {
                 l: 10,
                 r: 10,
@@ -78,10 +86,10 @@ export function ScaleTuningPlot ( {explanations, handlePlotClick}: {explanations
             updatemenus: [{
                 type: 'buttons',
                 buttons: [{
-                label: '≡',
-                method: 'relayout',
-                args: ['showlegend', false],
-                args2: ['showlegend', true],
+                    label: '≡',
+                    method: 'relayout',
+                    args: ['showlegend', false],
+                    args2: ['showlegend', true],
                 }]
             }],
         }}

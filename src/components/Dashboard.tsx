@@ -2,7 +2,6 @@ import React from "react";
 import { Feature } from "../dataset";
 import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Typography, Link } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Plot from 'react-plotly.js';
 import "./Dashboard.css";
 import { ScaleTuningPlot } from "./DashboardComponents";
 
@@ -12,12 +11,12 @@ interface DashboardProps {
 
 function MaxActivatingExample({ tokens, values }: { tokens: string[], values: number[] }) {
     return (
-        <div className="example" style={{ 
+        <div className="example" style={{
             paddingBottom: '0.5rem',
             paddingTop: '0.5rem',
             borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
-            fontSize: '0.8rem' 
-            }}>
+            fontSize: '0.8rem'
+        }}>
             {tokens.map((token, i) => (
                 <span
                     key={i}
@@ -35,7 +34,7 @@ function MaxActivatingExample({ tokens, values }: { tokens: string[], values: nu
 
 function SelfEExample({ example, scale, isHighlighted }: { example: string, scale: number, isHighlighted: boolean }) {
     return (
-        <div className="example" style={isHighlighted ? { backgroundColor: 'rgba(0, 0, 255, 0.5)', fontSize: '0.8rem' } : {fontSize: '0.8rem'}}>
+        <div className="example" style={isHighlighted ? { backgroundColor: 'rgba(0, 0, 255, 0.5)', fontSize: '0.8rem' } : { fontSize: '0.8rem' }}>
             Scale: {scale.toFixed(2)} | "{example}
         </div>
     );
@@ -94,26 +93,27 @@ function DashboardItem({ feature }: { feature: Feature }) {
                     <Typography variant="h6" fontWeight="bold">Feature {feature.feature}</Typography>
                     <Typography variant="subtitle1" fontWeight="bold">Layer {feature.layer}</Typography>
                     <Typography variant="subtitle1" fontWeight="bold">
-                        Max self similarity: <span style={{ backgroundColor: backgroundColorMeaning, padding: '2px 4px', borderRadius: '4px' }}>{maxSelfSimilarityMeaning.toFixed(4)}</span>
+                        Max self similarity (meaning): <span style={{ backgroundColor: backgroundColorMeaning, padding: '2px 4px', borderRadius: '4px' }}>{maxSelfSimilarityMeaning.toFixed(4)}</span>
                     </Typography>
                     <Typography variant="subtitle1" fontWeight="bold">
-                        Max self similarity repeat: <span style={{ backgroundColor: backgroundColorRepeat, padding: '2px 4px', borderRadius: '4px' }}>{maxSelfSimilarityRepeat.toFixed(4)}</span>
+                        Max self similarity (repeat): <span style={{ backgroundColor: backgroundColorRepeat, padding: '2px 4px', borderRadius: '4px' }}>{maxSelfSimilarityRepeat.toFixed(4)}</span>
                     </Typography>
                 </Box>
-                <ScaleTuningPlot explanations={feature.selfe_meaning} handlePlotClick={handlePlotClickMeaning} />
-                <ScaleTuningPlot explanations={feature.selfe_repeat} handlePlotClick={handlePlotClickRepeat} />
+                <ScaleTuningPlot title={'Scale tuning (Meaning)'} explanations={feature.selfe_meaning} handlePlotClick={handlePlotClickMeaning} />
+                <ScaleTuningPlot title={'Scale tuning (Repeat)'} explanations={feature.selfe_repeat} handlePlotClick={handlePlotClickRepeat} />
             </Grid>
             <Grid item xs={9}>
                 <Typography variant="body1" sx={{ fontSize: '1.2rem' }}><Link href={feature.neuronpedia_link} data-title={'Open on Neuronpedia'}>Neuronpedia explanation: {feature.autoint_explanation}</Link></Typography>
                 <Accordion expanded={expanded} onChange={handleChange}>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        {feature.selfe_meaning.selfe_explanations.slice(0, 3).map((explanation, i) => (
-                            <SelfEExample key={i} example={explanation} scale={feature.selfe_meaning.selfe_scales[i]}
-                                isHighlighted={false}
-                            />
-                        ))}
-                    </div>
+                        <Typography variant="h6">Meaning SE</Typography>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                            {feature.selfe_meaning.selfe_explanations.slice(0, 3).map((explanation, i) => (
+                                <SelfEExample key={i} example={explanation} scale={feature.selfe_meaning.selfe_scales[i]}
+                                    isHighlighted={false}
+                                />
+                            ))}
+                        </div>
                     </AccordionSummary>
                     <AccordionDetails>
                         {feature.selfe_meaning.selfe_explanations.map((explanation, i) => (
@@ -125,13 +125,14 @@ function DashboardItem({ feature }: { feature: Feature }) {
                 </Accordion>
                 <Accordion expanded={expandedRep} onChange={handleChangeRep}>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                        {feature.selfe_repeat.selfe_explanations.slice(0, 3).map((explanation, i) => (
-                            <SelfEExample key={i} example={explanation} scale={feature.selfe_repeat.selfe_scales[i]}
-                                isHighlighted={false}
-                            />
-                        ))}
-                    </div>
+                        <Typography variant="h6">Repeat SE</Typography>
+                        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                            {feature.selfe_repeat.selfe_explanations.slice(0, 3).map((explanation, i) => (
+                                <SelfEExample key={i} example={explanation} scale={feature.selfe_repeat.selfe_scales[i]}
+                                    isHighlighted={false}
+                                />
+                            ))}
+                        </div>
                     </AccordionSummary>
                     <AccordionDetails>
                         {feature.selfe_repeat.selfe_explanations.map((explanation, i) => (
