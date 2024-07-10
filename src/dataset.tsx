@@ -10,15 +10,9 @@ const base_urls_filter = new Map<number, string>([
     [12, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations-12&config=default&split=train&where="feature"='],
 ]);
 
-export interface Feature {
-    layer: number;
-    feature: number;
-    autoint_explanation: string;
-    neuronpedia_link: string;
+export interface SelfExplanations {
     selfe_explanations: string[];
     selfe_scales: number[];
-    max_act_examples: string[][];
-    max_act_values: number[][];
 
     scales: number[];
     self_similarity: number[];
@@ -27,6 +21,18 @@ export interface Feature {
     optimal_scale: number;
     original_idx: number[];
     selection_metric: number[];
+}
+
+export interface Feature {
+    layer: number;
+    feature: number;
+    autoint_explanation: string;
+    neuronpedia_link: string;
+    max_act_examples: string[][];
+    max_act_values: number[][];
+
+    selfe_meaning: SelfExplanations;
+    selfe_repeat: SelfExplanations;
 }
 
 function process_max_acts(max_acts: any): [string[][], number[][]] {
@@ -72,16 +78,10 @@ function sort_by_metric(texts: any[], scales: number[], metric: number[]): any[]
     return sorted_texts;
 }
 
-function process_selfe_explanations(row: any, probe_layer: number, selection_metric: number[]): [string[], number[], number[]] {
-    // Match the self-explanations with the scales and sort row.generations.texts using row.generations.scales
-
-    const max_scale = row.settings.max_scale;
-    const min_scale = row.settings.min_scale;
-    
-    const scales = row.generations.scales.map ((s: number) => (s - min_scale) / (max_scale - min_scale));
-    const texts = row.generations.texts;
-
-    const self_similarity = row.scale_tuning.selfsims[probe_layer]
+function process_selfe_explanations(max_scale: number, min_scale: number, generations: any, probe_layer: number, selection_metric: number[]): [string[], number[], number[]] {
+    // Match the self-explanations with the scales and sort row.generations.texts using row.generations.scales    
+    const scales = generations.scales.map ((s: number) => (s - min_scale) / (max_scale - min_scale));
+    const texts = generations.texts;
 
     const sorted_texts = sort_by_metric(texts, scales, selection_metric);
     const sorted_scales = sort_by_metric(scales, scales, selection_metric).map((s) => s * (max_scale - min_scale) + min_scale);
@@ -96,12 +96,11 @@ function normalize(values: number[]): number[] {
     return values.map((v) => (v - min_val) / (max_val - min_val));
 }
 
-function calculate_selection_metric(row: any, probe_layer: number, alpha: number, required_scale: number): number[] {
-    const cross_entropy = row.scale_tuning.crossents[0];
-    const normalized_ce = normalize(cross_entropy);
+function calculate_selection_metric(scale_tuning: any, probe_layer: number, alpha: number, required_scale: number): number[] {
+    const normalized_ce = normalize(scale_tuning.crossents[0]);
 
-    const scales = row.scale_tuning.scales;
-    const self_similarity = row.scale_tuning.selfsims[probe_layer];
+    const scales = scale_tuning.scales;
+    const self_similarity = scale_tuning.selfsims[probe_layer];
     const self_similarity_normalized = normalize(self_similarity);
 
     const metric = normalized_ce.map((ce: any, i: any) => self_similarity_normalized[i] * alpha - ce * (1 - alpha));
@@ -113,30 +112,91 @@ function calculate_selection_metric(row: any, probe_layer: number, alpha: number
     return metric;
 }
 
-function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {
+function row_to_explanations(row: any, probe_layer: number, alpha: number, required_scale: number): SelfExplanations {
+    const max_scale = row.settings.max_scale;
+    const min_scale = row.settings.min_scale;
+    const generations = row.generations;
 
+    const selection_metric = calculate_selection_metric(row.scale_tuning, probe_layer, alpha, required_scale);
+    const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(max_scale, min_scale, generations, probe_layer, selection_metric);
+
+    return {
+        selfe_explanations: selfe_explanations,
+        selfe_scales: selfe_scales,
+        scales: row.scale_tuning.scales,
+        self_similarity: row.scale_tuning.selfsims[probe_layer],
+        entropy: row.scale_tuning.entropy,
+        cross_entropy: row.scale_tuning.crossents[0],
+        optimal_scale: 0.0,
+        original_idx: original_idx,
+        selection_metric: selection_metric,
+    };
+}
+
+function row_to_rep_explanations(row: any, probe_layer: number, alpha: number, required_scale: number): SelfExplanations {
+    const max_scale = row.settings.max_scale;
+    const min_scale = row.settings.min_scale;
+    const generations = row.rep_generations;
+
+    const selection_metric = calculate_selection_metric(row.rep_scale_tuning, probe_layer, alpha, required_scale);
+    const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(max_scale, min_scale, generations, probe_layer, selection_metric);
+
+    return {
+        selfe_explanations: selfe_explanations,
+        selfe_scales: selfe_scales,
+        scales: row.rep_scale_tuning.scales,
+        self_similarity: row.rep_scale_tuning.selfsims[probe_layer],
+        entropy: row.rep_scale_tuning.entropy,
+        cross_entropy: row.rep_scale_tuning.crossents[0],
+        optimal_scale: 0.0,
+        original_idx: original_idx,
+        selection_metric: selection_metric,
+    };
+}
+
+function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {
+    
     const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
-    const sm = calculate_selection_metric(row, probe_layer, alpha, required_scale);
-    const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(row, probe_layer, sm);
+    const selfe_meaning = row_to_explanations(row, probe_layer, alpha, required_scale);
+    const selfe_repeat = row_to_rep_explanations(row, probe_layer, alpha, required_scale);
 
     return {
         layer: layer,
         feature: row.feature,
         autoint_explanation: row.explanation,
-        selfe_explanations: selfe_explanations,
-        selfe_scales: selfe_scales,
+        neuronpedia_link: `https://www.neuronpedia.org/gemma-2b${layer === 12 ? '-it' : ''}/${layer}-res-jb/${row.feature}`,
         max_act_examples: max_act_examples,
         max_act_values: max_act_values,
-        optimal_scale: 0.0,
-        scales: row.scale_tuning.scales,
-        self_similarity: row.scale_tuning.selfsims[probe_layer],
-        entropy: row.scale_tuning.entropy,
-        cross_entropy: row.scale_tuning.crossents[0],
-        selection_metric: sm,
-        original_idx: original_idx,
-        neuronpedia_link: `https://www.neuronpedia.org/gemma-2b${layer === 12 ? '-it' : ''}/${layer}-res-jb/${row.feature}`,
+        selfe_meaning: selfe_meaning,
+        selfe_repeat: selfe_repeat,
     };
 }
+
+
+// function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {
+
+//     const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
+//     const sm = calculate_selection_metric(row, probe_layer, alpha, required_scale);
+//     const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(row, probe_layer, sm);
+
+//     return {
+//         layer: layer,
+//         feature: row.feature,
+//         autoint_explanation: row.explanation,
+//         selfe_explanations: selfe_explanations,
+//         selfe_scales: selfe_scales,
+//         max_act_examples: max_act_examples,
+//         max_act_values: max_act_values,
+//         optimal_scale: 0.0,
+//         scales: row.scale_tuning.scales,
+//         self_similarity: row.scale_tuning.selfsims[probe_layer],
+//         entropy: row.scale_tuning.entropy,
+//         cross_entropy: row.scale_tuning.crossents[0],
+//         selection_metric: sm,
+//         original_idx: original_idx,
+//         neuronpedia_link: `https://www.neuronpedia.org/gemma-2b${layer === 12 ? '-it' : ''}/${layer}-res-jb/${row.feature}`,
+//     };
+// }
 
 export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number): Promise<Feature[]> {
     const base_url = base_urls.get(layer)!;
