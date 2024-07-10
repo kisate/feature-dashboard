@@ -14,6 +14,7 @@ export interface Feature {
     layer: number;
     feature: number;
     autoint_explanation: string;
+    neuronpedia_link: string;
     selfe_explanations: string[];
     selfe_scales: number[];
     max_act_examples: string[][];
@@ -132,7 +133,8 @@ function row_to_feature(row: any, layer: number, probe_layer: number, alpha: num
         entropy: row.scale_tuning.entropy,
         cross_entropy: row.scale_tuning.crossents[0],
         selection_metric: sm,
-        original_idx: original_idx
+        original_idx: original_idx,
+        neuronpedia_link: `https://www.neuronpedia.org/gemma-2b${layer === 12 ? '-it' : ''}/${layer}-res-jb/${row.feature}`,
     };
 }
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { Feature } from "../dataset";
-import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Grid, Typography, Link } from "@mui/material";
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Plot from 'react-plotly.js';
 import "./Dashboard.css";
@@ -119,12 +119,13 @@ function DashboardItem({ feature }: { feature: Feature }) {
                         
                     ]}
                     layout={{
-                        width: 300,
+                        // width: 300,
                         height: 300,
+                        autosize: true,
                         title: 'Scale tuning',
                         margin: {
                             l: 10,
-                            r: 50,
+                            r: 10,
                             b: 40,
                             t: 50,
                             pad: 4
@@ -150,14 +151,23 @@ function DashboardItem({ feature }: { feature: Feature }) {
                             overlaying: 'y',
                             side: 'left'
                         },
-                        showlegend: false
+                        showlegend: false,
+                        updatemenus: [{
+                            type: 'buttons',
+                            buttons: [{
+                            label: '≡',
+                            method: 'relayout',
+                            args: ['showlegend', false],
+                            args2: ['showlegend', true],
+                            }]
+                        }],
                     }}
                     style={{ borderRadius: '0px' }}
                     onClick={handlePlotClick}
                 />
             </Grid>
             <Grid item xs={9}>
-                <Typography variant="body1" sx={{ fontSize: '1.2rem' }}>{feature.autoint_explanation}</Typography>
+                <Typography variant="body1" sx={{ fontSize: '1.2rem' }}><Link href={feature.neuronpedia_link} data-title={'Open on Neuronpedia'}>Neuronpedia explanation: {feature.autoint_explanation}</Link></Typography>
                 <Accordion expanded={expanded} onChange={handleChange}>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                     <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
