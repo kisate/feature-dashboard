@@ -78,10 +78,22 @@ function sort_by_metric(texts: any[], scales: number[], metric: number[]): any[]
     return sorted_texts;
 }
 
+function process_explanation(text: string): string {
+    if (text.includes("<eos>")) {
+        return text.split("<eos>")[0];
+    }
+
+    if (text[-1] === '"') {
+        return text
+    }
+
+    return text + "...";
+}
+
 function process_selfe_explanations(max_scale: number, min_scale: number, generations: any, probe_layer: number, selection_metric: number[]): [string[], number[], number[]] {
     // Match the self-explanations with the scales and sort row.generations.texts using row.generations.scales    
     const scales = generations.scales.map ((s: number) => (s - min_scale) / (max_scale - min_scale));
-    const texts = generations.texts;
+    const texts = generations.texts.map ((t: string) => process_explanation(t));
 
     const sorted_texts = sort_by_metric(texts, scales, selection_metric);
     const sorted_scales = sort_by_metric(scales, scales, selection_metric).map((s) => s * (max_scale - min_scale) + min_scale);
@@ -171,32 +183,6 @@ function row_to_feature(row: any, layer: number, probe_layer: number, alpha: num
         selfe_repeat: selfe_repeat,
     };
 }
-
-
-// function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {
-
-//     const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
-//     const sm = calculate_selection_metric(row, probe_layer, alpha, required_scale);
-//     const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(row, probe_layer, sm);
-
-//     return {
-//         layer: layer,
-//         feature: row.feature,
-//         autoint_explanation: row.explanation,
-//         selfe_explanations: selfe_explanations,
-//         selfe_scales: selfe_scales,
-//         max_act_examples: max_act_examples,
-//         max_act_values: max_act_values,
-//         optimal_scale: 0.0,
-//         scales: row.scale_tuning.scales,
-//         self_similarity: row.scale_tuning.selfsims[probe_layer],
-//         entropy: row.scale_tuning.entropy,
-//         cross_entropy: row.scale_tuning.crossents[0],
-//         selection_metric: sm,
-//         original_idx: original_idx,
-//         neuronpedia_link: `https://www.neuronpedia.org/gemma-2b${layer === 12 ? '-it' : ''}/${layer}-res-jb/${row.feature}`,
-//     };
-// }
 
 export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number): Promise<Feature[]> {
     const base_url = base_urls.get(layer)!;

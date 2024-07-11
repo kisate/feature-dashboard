@@ -14,7 +14,7 @@ function App() {
   const query = useQuery();
 
   const [features, setFeatures] = React.useState<Feature[]>([]);
-  const [offset, setOffset] = React.useState(Number(query.get('offset')) || 1000);
+  const [offset, setOffset] = React.useState(Number(query.get('offset')) || 2000);
   const [length, setLength] = React.useState(Number(query.get('length')) || 10);
   const [probeLayer, setProbeLayer] = React.useState(Number(query.get('probeLayer')) || 16);
   const [loading, setLoading] = React.useState(true);
