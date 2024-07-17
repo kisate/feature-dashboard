@@ -6,7 +6,7 @@ const base_urls = new Map<number, string>([
     [12, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations-12&config=default&split=train&",],
 ]);
 
-const base_url_ours = "https://datasets-server.huggingface.co/rows?dataset=kisate-team/gemma-2b-suite-explanations&"
+const base_url_ours = "https://datasets-server.huggingface.co/filter?dataset=kisate-team/gemma-2b-suite-explanations&"
 
 const base_urls_filter = new Map<number, string>([
     [6, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations&config=default&split=train&where="feature"='],
