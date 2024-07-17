@@ -142,7 +142,8 @@ function DashboardItem({ feature }: { feature: Feature }) {
                         ))}
                     </AccordionDetails>
                 </Accordion>
-                <Accordion>
+                
+                {feature.max_act_examples.length > 0 && <Accordion>
                     <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                         <MaxActivatingExample tokens={feature.max_act_examples[0]} values={feature.max_act_values[0]} />
                     </AccordionSummary>
@@ -151,7 +152,7 @@ function DashboardItem({ feature }: { feature: Feature }) {
                             <MaxActivatingExample tokens={example} key={i} values={feature.max_act_values[i]} />
                         ))}
                     </AccordionDetails>
-                </Accordion>
+                </Accordion>}
             </Grid>
         </Grid>
     );

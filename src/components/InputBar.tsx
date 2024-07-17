@@ -9,6 +9,24 @@ const darkTheme = createTheme({
   },
 });
 
+const layerOptions: Map<string, { label: string, value: number }[]> = new Map([
+  ['jb-r', [
+    { label: '6 (base)', value: 6 },
+    { label: '12 (it)', value: 12 },
+  ]],
+  ['our-r', [
+    { label: '6', value: 6 },
+    { label: '8', value: 8 },
+    { label: '9', value: 9 },
+    { label: '10', value: 10 },
+    { label: '11', value: 11 },
+    { label: '12', value: 12 },
+    { label: '13', value: 13 },
+    { label: '14', value: 14 },
+    { label: '15', value: 15 },
+  ]],
+]);
+
 export function InputBar({
   setOffset,
   setLength,
@@ -17,13 +35,15 @@ export function InputBar({
   setAlpha,
   setRequiredScale,
   setTargetFeature,
+  setVersion,
   offset,
   length,
   probeLayer,
   layer,
   alpha,
   requiredScale,
-  targetFeature
+  targetFeature,
+  version
 }: {
   setOffset: (value: number) => void;
   setLength: (value: number) => void;
@@ -32,6 +52,7 @@ export function InputBar({
   setAlpha: (value: number) => void;
   setRequiredScale: (value: number) => void;
   setTargetFeature: (value: null | number) => void;
+  setVersion: (value: string) => void;
   offset: number;
   length: number;
   probeLayer: number;
@@ -39,6 +60,7 @@ export function InputBar({
   alpha: number;
   requiredScale: number;
   targetFeature: number | null;
+  version: string;
 }) {
   const [localOffset, setLocalOffset] = useState(offset.toString());
   const [localLength, setLocalLength] = useState(length.toString());
@@ -86,6 +108,20 @@ export function InputBar({
           }}
         >
           <FormControl sx={{ minWidth: 100, marginRight: 2 }}>
+            <InputLabel id="version-select-label">Version</InputLabel>
+            <Select
+              labelId="version-select-label"
+              id="version-select"
+              value={version}
+              label="Version"
+              onChange={(e: any) => setVersion(e.target.value)}
+            >
+              <MenuItem value="jb-r">jb-r</MenuItem>
+              <MenuItem value="our-r">our-r</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl sx={{ minWidth: 100, marginRight: 2 }}>
             <InputLabel id="layer-select-label">Layer</InputLabel>
             <Select
               labelId="layer-select-label"
@@ -94,10 +130,12 @@ export function InputBar({
               label="Layer"
               onChange={(e: any) => setLayer(e.target.value)}
             >
-              <MenuItem value={6}>6 (base)</MenuItem>
-              <MenuItem value={12}>12 (it)</MenuItem>
+              {layerOptions.get(version)!.map(option => (
+                <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+              ))}
             </Select>
           </FormControl>
+
           <TextField
             id="offset-input"
             type="tel"

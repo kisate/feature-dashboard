@@ -1,14 +1,19 @@
 import axios from 'axios';
+import { version } from 'react';
 
 const base_urls = new Map<number, string>([
     [6, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations&config=default&split=train&",],
     [12, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations-12&config=default&split=train&",],
 ]);
 
+const base_url_ours = "https://datasets-server.huggingface.co/rows?dataset=kisate-team/gemma-2b-suite-explanations&"
+
 const base_urls_filter = new Map<number, string>([
     [6, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations&config=default&split=train&where="feature"='],
     [12, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations-12&config=default&split=train&where="feature"='],
 ]);
+
+
 
 export interface SelfExplanations {
     selfe_explanations: string[];
@@ -36,6 +41,9 @@ export interface Feature {
 }
 
 function process_max_acts(max_acts: any): [string[][], number[][]] {
+    if (max_acts === undefined) {
+        return [[], []];
+    }
     const rawTokens: string[][] = max_acts.map((ma: any) => ma.tokens.map((t: any) => t.replace("▁", " ")));
     const rawValues: number[][] = max_acts.map((ma: any) => ma.values);
 
@@ -78,7 +86,9 @@ function sort_by_metric(texts: any[], scales: number[], metric: number[]): any[]
     return sorted_texts;
 }
 
-function process_explanation(text: string): string {
+function process_explanation(raw_text: string): string {
+    const text = raw_text.replace(/(?:\r\n|\r|\n)/g, ' ');
+
     if (text.includes("<eos>")) {
         return text.split("<eos>")[0];
     }
@@ -109,7 +119,7 @@ function normalize(values: number[]): number[] {
 }
 
 function calculate_selection_metric(scale_tuning: any, probe_layer: number, alpha: number, required_scale: number): number[] {
-    const normalized_ce = normalize(scale_tuning.crossents[0]);
+    const normalized_ce = normalize(scale_tuning.crossents);
 
     const scales = scale_tuning.scales;
     const self_similarity = scale_tuning.selfsims[probe_layer];
@@ -138,7 +148,7 @@ function row_to_explanations(row: any, probe_layer: number, alpha: number, requi
         scales: row.scale_tuning.scales,
         self_similarity: row.scale_tuning.selfsims[probe_layer],
         entropy: row.scale_tuning.entropy,
-        cross_entropy: row.scale_tuning.crossents[0],
+        cross_entropy: row.scale_tuning.crossents,
         optimal_scale: 0.0,
         original_idx: original_idx,
         selection_metric: selection_metric,
@@ -159,18 +169,45 @@ function row_to_rep_explanations(row: any, probe_layer: number, alpha: number, r
         scales: row.rep_scale_tuning.scales,
         self_similarity: row.rep_scale_tuning.selfsims[probe_layer],
         entropy: row.rep_scale_tuning.entropy,
-        cross_entropy: row.rep_scale_tuning.crossents[0],
+        cross_entropy: row.rep_scale_tuning.crossents,
         optimal_scale: 0.0,
         original_idx: original_idx,
         selection_metric: selection_metric,
     };
 }
 
+function build_url(version: string, layer: number, offset: number, length: number, feature: number | null): string {
+
+    if (feature !== null) {
+        if (version === "our-r") {
+            return base_url_ours + 'config=l' + layer + '&split=train&where="feature"=' + feature;
+        }
+        else if (version === "jb-r") {
+            return base_urls_filter.get(layer)! + feature;
+        }
+    }
+
+    let base_url = "";
+    if (version === "our-r") {
+        base_url = base_url_ours + 'config=l' + layer + '&split=train&';
+    } else if (version === "jb-r") {
+        base_url = base_urls.get(layer)!;
+    }
+
+    return base_url + `offset=${offset}&length=${length}`;
+}
+
 function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {
+    
+    if (version === "jb-r") {
+        row.crossents = row.crossents[0];
+    }
+    
     
     const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
     const selfe_meaning = row_to_explanations(row, probe_layer, alpha, required_scale);
     const selfe_repeat = row_to_rep_explanations(row, probe_layer, alpha, required_scale);
+
 
     return {
         layer: layer,
@@ -184,9 +221,9 @@ function row_to_feature(row: any, layer: number, probe_layer: number, alpha: num
     };
 }
 
-export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number): Promise<Feature[]> {
-    const base_url = base_urls.get(layer)!;
-    const url = base_url + `offset=${offset}&length=${length}`;
+export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number, version: string): Promise<Feature[]> {
+    const url = build_url(version, layer, offset, length, null);
+    console.log(url);
 
     const response = axios.get(url);
 
@@ -198,10 +235,8 @@ export async function get_feature_sample(layer: number, offset: number, length: 
     });
 }
 
-export async function get_feature(layer: number, probe_layer: number, alpha: number, required_scale: number, feature_number: number): Promise<Feature[]> {
-    const base_url = base_urls_filter.get(layer)!;
-    const url = base_url + feature_number;
-
+export async function get_feature(layer: number, probe_layer: number, alpha: number, required_scale: number, feature_number: number, version: string): Promise<Feature[]> {
+    const url = build_url(version, layer, 0, 1, feature_number);
     const response = axios.get(url);
 
     return response.then((res) => {

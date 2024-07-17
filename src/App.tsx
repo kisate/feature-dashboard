@@ -23,6 +23,7 @@ function App() {
   const [requiredScale, setRequiredScale] = React.useState(Number(query.get('requiredScale')) || 10.0);
   const [targetFeature, setTargetFeature] = React.useState<number | null>(query.get('targetFeature') ? Number(query.get('targetFeature')) : null);
   const [oldTargetFeature, setOldTargetFeature] = React.useState<number | null>(null);
+  const [version, setVersion] = React.useState(query.get('version') || 'our-r');
 
   const updateUrl = () => {
     const params = new URLSearchParams();
@@ -32,6 +33,7 @@ function App() {
     params.set('layer', String(layer));
     params.set('alpha', String(alpha));
     params.set('requiredScale', String(requiredScale));
+    params.set('version', version);
     if (targetFeature !== null) {
       params.set('targetFeature', String(targetFeature));
     }
@@ -39,7 +41,7 @@ function App() {
 
   React.useEffect(() => {
     updateUrl();
-  }, [offset, length, probeLayer, layer, alpha, requiredScale, targetFeature]);
+  }, [offset, length, probeLayer, layer, alpha, requiredScale, targetFeature, version]);
 
   const handleNextPage = () => {
     setOffset(prevOffset => prevOffset + length);
@@ -57,7 +59,7 @@ function App() {
 
     if (targetFeature !== null) {
       if (oldTargetFeature !== targetFeature) {
-        get_feature(layer, probeLayer, alpha, requiredScale, targetFeature).then((res) => {
+        get_feature(layer, probeLayer, alpha, requiredScale, targetFeature, version).then((res) => {
           setFeatures(res);
           setLoading(false);
           setOldTargetFeature(targetFeature);
@@ -66,11 +68,11 @@ function App() {
       }
     }
     
-    get_feature_sample(layer, offset, length, probeLayer, alpha, requiredScale).then((res) => {
+    get_feature_sample(layer, offset, length, probeLayer, alpha, requiredScale, version).then((res) => {
       setFeatures(res);
       setLoading(false);
     });
-  }, [layer, offset, length, probeLayer, alpha, requiredScale, targetFeature]);
+  }, [layer, offset, length, probeLayer, alpha, requiredScale, targetFeature, version]);
 
   return (
     <div className="App">
@@ -82,14 +84,16 @@ function App() {
           setLayer={setLayer}
           setAlpha={setAlpha}
           setRequiredScale={setRequiredScale}
-          targetFeature={targetFeature}
+          setTargetFeature={setTargetFeature}
+          setVersion={setVersion}
           offset={offset}
           length={length}
           probeLayer={probeLayer}
           layer={layer}
           alpha={alpha}
           requiredScale={requiredScale}
-          setTargetFeature={setTargetFeature}
+          targetFeature={targetFeature}
+          version={version}
         />
         {loading ? <p>Loading...</p> : <Dashboard features={features} />}
         <div style={{ display: 'flex', flexDirection: 'row' }}>
