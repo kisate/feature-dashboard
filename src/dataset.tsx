@@ -1,19 +1,12 @@
 import axios from 'axios';
 import { version } from 'react';
 
-const base_urls = new Map<number, string>([
-    [6, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations&config=default&split=train&",],
-    [12, "https://datasets-server.huggingface.co/rows?dataset=kisate-team/generated-explanations-12&config=default&split=train&",],
+const jb_datasets = new Map<number, string>([
+    [6, "kisate-team/generated-explanations"],
+    [12, "kisa-team/generated-explanations-12"],
 ]);
 
-const base_url_ours = "https://datasets-server.huggingface.co/filter?dataset=kisate-team/gemma-2b-suite-explanations&"
-
-const base_urls_filter = new Map<number, string>([
-    [6, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations&config=default&split=train&where="feature"='],
-    [12, 'https://datasets-server.huggingface.co/filter?dataset=kisate-team/generated-explanations-12&config=default&split=train&where="feature"='],
-]);
-
-
+const our_dataset = "kisate-team/gemma-2b-suite-explanations";
 
 export interface SelfExplanations {
     selfe_explanations: string[];
@@ -176,25 +169,50 @@ function row_to_rep_explanations(row: any, probe_layer: number, alpha: number, r
     };
 }
 
+function build_hf_url(dataset: string, config: string, split: string, offset: number, length: number, where: string | null): string {
+    let url = 'https://datasets-server.huggingface.co/'
+    if (where !== null) {
+        url += 'filter?dataset='
+    }
+    else {
+        url += 'rows?dataset='
+    }
+    url += dataset + '&config=' + config + '&split=' + split + '&offset=' + offset + '&length=' + length;
+    if (where !== null) {
+        url += '&where=' + where;
+    }
+    return url;
+}
+
 function build_url(version: string, layer: number, offset: number, length: number, feature: number | null): string {
 
-    if (feature !== null) {
-        if (version === "our-r") {
-            return base_url_ours + 'config=l' + layer + '&split=train&where="feature"=' + feature;
-        }
-        else if (version === "jb-r") {
-            return base_urls_filter.get(layer)! + feature;
-        }
-    }
-
-    let base_url = "";
+    let dataset = "";
     if (version === "our-r") {
-        base_url = base_url_ours + 'config=l' + layer + '&split=train&';
+        dataset = our_dataset;
+    } else if (version === "our-ao") {
+        dataset = our_dataset;
     } else if (version === "jb-r") {
-        base_url = base_urls.get(layer)!;
+        dataset = jb_datasets.get(layer)!;
+    }
+    
+    let config = "";
+    if (version === "our-r") {
+        config = 'l' + layer;
+    } else if (version === "our-ao") {
+        config = 'l' + layer + "_attn_out";
+    } else if (version === "jb-r") {
+        config = 'default';
     }
 
-    return base_url + `offset=${offset}&length=${length}`;
+    const split = "train";
+    let where = null;
+    if (feature !== null) {
+        where = '"feature"=' + feature;
+        offset = 0;
+        length = 1;
+    }
+
+    return build_hf_url(dataset, config, split, offset, length, where);
 }
 
 function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {

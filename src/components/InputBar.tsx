@@ -14,17 +14,8 @@ const layerOptions: Map<string, { label: string, value: number }[]> = new Map([
     { label: '6 (base)', value: 6 },
     { label: '12 (it)', value: 12 },
   ]],
-  ['our-r', [
-    { label: '6', value: 6 },
-    { label: '8', value: 8 },
-    { label: '9', value: 9 },
-    { label: '10', value: 10 },
-    { label: '11', value: 11 },
-    { label: '12', value: 12 },
-    { label: '13', value: 13 },
-    { label: '14', value: 14 },
-    { label: '15', value: 15 },
-  ]],
+  ['our-r', [6, 8, 9, 10, 11, 12, 13, 14, 15].map((_, i) => ({ label: i.toString(), value: i }))],
+  ['our-ao', [6, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((_, i) => ({ label: i.toString(), value: i }))],
 ]);
 
 export function InputBar({
@@ -118,6 +109,7 @@ export function InputBar({
             >
               <MenuItem value="jb-r">jb-r</MenuItem>
               <MenuItem value="our-r">our-r</MenuItem>
+              <MenuItem value="our-ao">our-ao</MenuItem>
             </Select>
           </FormControl>
 
