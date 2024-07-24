@@ -12,8 +12,8 @@ interface DashboardProps {
 function MaxActivatingExample({ tokens, values }: { tokens: string[], values: number[] }) {
     return (
         <div className="example" style={{
-            paddingBottom: '0.5rem',
-            paddingTop: '0.5rem',
+            paddingBottom: '0.2rem',
+            paddingTop: '0.2rem',
             borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
             fontSize: '0.8rem'
         }}>
@@ -21,7 +21,7 @@ function MaxActivatingExample({ tokens, values }: { tokens: string[], values: nu
                 <span
                     key={i}
                     style={{
-                        backgroundColor: `rgba(255, 0, 0, ${values[i]})`,
+                        backgroundColor: `rgba(10, 220, 100, ${values[i] * 0.6})`,
                         display: 'inline-block'
                     }}
                 >

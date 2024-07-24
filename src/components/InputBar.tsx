@@ -14,8 +14,8 @@ const layerOptions: Map<string, { label: string, value: number }[]> = new Map([
     { label: '6 (base)', value: 6 },
     { label: '12 (it)', value: 12 },
   ]],
-  ['our-r', [6, 8, 9, 10, 11, 12, 13, 14, 15].map((_, i) => ({ label: i.toString(), value: i }))],
-  ['our-ao', [6, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((_, i) => ({ label: i.toString(), value: i }))],
+  ['our-r', [6, 8, 9, 10, 11, 12, 13, 14, 15].map((x, _) => ({ label: x.toString(), value: x }))],
+  ['our-ao', [6, 8, 9, 10, 11, 12, 13, 14, 15, 16].map((x, _) => ({ label: x.toString(), value: x}))],
 ]);
 
 export function InputBar({

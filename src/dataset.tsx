@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { version } from 'react';
 
 const jb_datasets = new Map<number, string>([
     [6, "kisate-team/generated-explanations"],
@@ -46,14 +45,23 @@ function process_max_acts(max_acts: any): [string[][], number[][]] {
     var tokens = rawTokens.filter((t, i) => rawTokensJoin.indexOf(t.join("")) === i);
     var values = tokens.map((t) => rawValues[rawTokens.findIndex((rt) => rt.join("") === t.join(""))]);
 
-    const firstNonZero = values.map((v) => v.findIndex((v) => v > 0));
-    const lastNonZero = values.map((v) => v.length - 1 - v.slice().reverse().findIndex((v) => v > 0));
+    // const firstNonZero = values.map((v) => v.findIndex((v) => v > 0));
+    // const lastNonZero = values.map((v) => v.length - 1 - v.slice().reverse().findIndex((v) => v > 0));
+
+    // tokens = tokens.map(
+    //     (t, i) => t.slice(Math.max(firstNonZero[i] - 10, 0), Math.min(lastNonZero[i] + 10, t.length))
+    // );
+    // values = values.map(
+    //     (v, i) => v.slice(Math.max(firstNonZero[i] - 10, 0), Math.min(lastNonZero[i] + 10, v.length))
+    // );
+
+    const maxInd = values.map((v) => v.indexOf(Math.max(...v)));
 
     tokens = tokens.map(
-        (t, i) => t.slice(Math.max(firstNonZero[i] - 10, 0), Math.min(lastNonZero[i] + 10, t.length))
+        (t, i) => t.slice(Math.max(maxInd[i] - 10, 0), Math.min(maxInd[i] + 10, t.length))
     );
     values = values.map(
-        (v, i) => v.slice(Math.max(firstNonZero[i] - 10, 0), Math.min(lastNonZero[i] + 10, v.length))
+        (v, i) => v.slice(Math.max(maxInd[i] - 10, 0), Math.min(maxInd[i] + 10, v.length))
     );
 
     const max_activation = Math.max(...values.map((v) => Math.max(...v)));
@@ -113,7 +121,6 @@ function normalize(values: number[]): number[] {
 
 function calculate_selection_metric(scale_tuning: any, probe_layer: number, alpha: number, required_scale: number): number[] {
     const normalized_ce = normalize(scale_tuning.crossents);
-
     const scales = scale_tuning.scales;
     const self_similarity = scale_tuning.selfsims[probe_layer];
     const self_similarity_normalized = normalize(self_similarity);
@@ -133,6 +140,7 @@ function row_to_explanations(row: any, probe_layer: number, alpha: number, requi
     const generations = row.generations;
 
     const selection_metric = calculate_selection_metric(row.scale_tuning, probe_layer, alpha, required_scale);
+
     const [selfe_explanations, selfe_scales, original_idx] = process_selfe_explanations(max_scale, min_scale, generations, probe_layer, selection_metric);
 
     return {
@@ -215,10 +223,12 @@ function build_url(version: string, layer: number, offset: number, length: numbe
     return build_hf_url(dataset, config, split, offset, length, where);
 }
 
-function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number): Feature {
+function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number, version: string): Feature {
     
+
     if (version === "jb-r") {
-        row.crossents = row.crossents[0];
+        row.scale_tuning.crossents = row.scale_tuning.crossents[0];
+        row.rep_scale_tuning.crossents = row.rep_scale_tuning.crossents[0];
     }
     
     
@@ -248,7 +258,7 @@ export async function get_feature_sample(layer: number, offset: number, length: 
     return response.then((res) => {
         console.log(res.data);
 
-        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale));
+        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale, version));
         return features;
     });
 }
@@ -260,7 +270,7 @@ export async function get_feature(layer: number, probe_layer: number, alpha: num
     return response.then((res) => {
         console.log(res.data);
 
-        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale));
+        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale, version));
         return features;
     });
 }

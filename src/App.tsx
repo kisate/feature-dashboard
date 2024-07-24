@@ -23,7 +23,7 @@ function App() {
   const [requiredScale, setRequiredScale] = React.useState(Number(query.get('requiredScale')) || 10.0);
   const [targetFeature, setTargetFeature] = React.useState<number | null>(query.get('targetFeature') ? Number(query.get('targetFeature')) : null);
   const [oldTargetFeature, setOldTargetFeature] = React.useState<number | null>(null);
-  const [version, setVersion] = React.useState(query.get('version') || 'our-r');
+  const [version, setVersion] = React.useState(query.get('version') || 'jb-r');
 
   const updateUrl = () => {
     const params = new URLSearchParams();
