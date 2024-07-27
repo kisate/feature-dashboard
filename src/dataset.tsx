@@ -159,6 +159,21 @@ function row_to_explanations(row: any, probe_layer: number, alpha: number, requi
 function row_to_rep_explanations(row: any, probe_layer: number, alpha: number, required_scale: number): SelfExplanations {
     const max_scale = row.settings.max_scale;
     const min_scale = row.settings.min_scale;
+
+    if (row.rep_generations === undefined) {
+        return {
+            selfe_explanations: [],
+            selfe_scales: [],
+            scales: [],
+            self_similarity: [],
+            entropy: [],
+            cross_entropy: [],
+            optimal_scale: 0.0,
+            original_idx: [],
+            selection_metric: [],
+        };
+    }
+
     const generations = row.rep_generations;
 
     const selection_metric = calculate_selection_metric(row.rep_scale_tuning, probe_layer, alpha, required_scale);
@@ -195,9 +210,7 @@ function build_hf_url(dataset: string, config: string, split: string, offset: nu
 function build_url(version: string, layer: number, offset: number, length: number, feature: number | null): string {
 
     let dataset = "";
-    if (version === "our-r") {
-        dataset = our_dataset;
-    } else if (version === "our-ao") {
+    if (version.startsWith("our")) {
         dataset = our_dataset;
     } else if (version === "jb-r") {
         dataset = jb_datasets.get(layer)!;
@@ -208,6 +221,8 @@ function build_url(version: string, layer: number, offset: number, length: numbe
         config = 'l' + layer;
     } else if (version === "our-ao") {
         config = 'l' + layer + "_attn_out";
+    } else if (version === "our-t") {
+        config = 'l' + layer + "_transcoder";
     } else if (version === "jb-r") {
         config = 'default';
     }
