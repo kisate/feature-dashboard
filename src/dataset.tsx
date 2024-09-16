@@ -2,10 +2,11 @@ import axios from 'axios';
 
 const jb_datasets = new Map<number, string>([
     [6, "kisate-team/generated-explanations"],
-    [12, "kisa-team/generated-explanations-12"],
+    [12, "kisate-team/generated-explanations-12"],
 ]);
 
 const our_dataset = "kisate-team/gemma-2b-suite-explanations";
+const our_dataset_maxacts = "kisate-team/gemma-2b-suite-maxacts";
 
 export interface SelfExplanations {
     selfe_explanations: string[];
@@ -207,22 +208,25 @@ function build_hf_url(dataset: string, config: string, split: string, offset: nu
     return url;
 }
 
-function build_url(version: string, layer: number, offset: number, length: number, feature: number | null): string {
+function build_url(version: string, layer: number, offset: number, length: number, feature: number | null, maxacts: boolean): string {
 
-    let dataset = "";
-    if (version.startsWith("our")) {
-        dataset = our_dataset;
+    let dataset = our_dataset;
+    if (maxacts) {
+        dataset = our_dataset_maxacts;
+    }
+    if (version === "our-r") {
+        dataset = dataset + "-residual";
+    } else if (version === "our-ao") {
+        dataset = dataset + "-attn_out";
+    } else if (version === "our-t") {
+        dataset = dataset + "-transcoder";
     } else if (version === "jb-r") {
         dataset = jb_datasets.get(layer)!;
     }
     
     let config = "";
-    if (version === "our-r") {
+    if (version.startsWith("our")) {
         config = 'l' + layer;
-    } else if (version === "our-ao") {
-        config = 'l' + layer + "_attn_out";
-    } else if (version === "our-t") {
-        config = 'l' + layer + "_transcoder";
     } else if (version === "jb-r") {
         config = 'default';
     }
@@ -238,7 +242,7 @@ function build_url(version: string, layer: number, offset: number, length: numbe
     return build_hf_url(dataset, config, split, offset, length, where);
 }
 
-function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number, version: string): Feature {
+function row_to_feature(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number, version: string, max_acts: any | null): Feature {
     
 
     if (version === "jb-r") {
@@ -246,8 +250,12 @@ function row_to_feature(row: any, layer: number, probe_layer: number, alpha: num
         row.rep_scale_tuning.crossents = row.rep_scale_tuning.crossents[0];
     }
     
+    if (max_acts === null) {
+        max_acts = row.max_acts;
+    }
+
     
-    const [max_act_examples, max_act_values] = process_max_acts(row.max_acts);
+    const [max_act_examples, max_act_values] = process_max_acts(max_acts);
     const selfe_meaning = row_to_explanations(row, probe_layer, alpha, required_scale);
     const selfe_repeat = row_to_rep_explanations(row, probe_layer, alpha, required_scale);
 
@@ -264,28 +272,156 @@ function row_to_feature(row: any, layer: number, probe_layer: number, alpha: num
     };
 }
 
-export async function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number, version: string): Promise<Feature[]> {
-    const url = build_url(version, layer, offset, length, null);
+
+function process_max_acts_respone(max_acts_response: any): any {
+    const max_acts_map = new Map<number, any>();
+    max_acts_response.rows.forEach((ma: any) => max_acts_map.set(ma.row.feature, ma.row.tokens.map((t: any, i: number) => ({ tokens: t, values: ma.row.values[i] }))));
+    return max_acts_map
+}
+
+export function get_feature_sample(layer: number, offset: number, length: number, probe_layer: number, alpha: number, required_scale: number, version: string): Promise<Feature[]> {
+    const url = build_url(version, layer, offset, length, null, false);
+    const url_maxacts = build_url(version, layer, offset, length, null, true);
     console.log(url);
 
-    const response = axios.get(url);
+    const requests = [axios.get(url)];
 
-    return response.then((res) => {
-        console.log(res.data);
+    if (version.startsWith("our")) {
+        requests.push(axios.get(url_maxacts));
+    }
 
-        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale, version));
-        return features;
+    return Promise.allSettled(requests)
+    .then((results) => {
+        const responseResult = results[0];
+        const maxActsResult = results[1];
+
+        let response = null;
+        let max_acts_response = null;
+        if (responseResult && responseResult.status === "fulfilled") {
+            response = responseResult.value;
+        }
+        
+        if (maxActsResult && maxActsResult.status === "fulfilled") {
+            max_acts_response = maxActsResult.value;
+        }
+
+        if (response) {
+            let max_acts: any = null;
+            if (max_acts_response) {
+                max_acts = process_max_acts_respone(max_acts_response.data);
+            }
+
+            const features: Feature[] = response.data.rows.map((row: any) =>
+                row_to_feature(row.row, layer, probe_layer, alpha, required_scale, version, max_acts ? max_acts.get(row.row.feature) : null)
+            );
+
+            return features;
+        } else if (max_acts_response) {
+
+            console.log(max_acts_response.data.rows);
+
+            const max_acts = process_max_acts_respone(max_acts_response.data);
+
+            const features: Feature[] = max_acts_response.data.rows.map((row: any) =>
+                row_to_feature_maxacts_only(row.row, layer, probe_layer, alpha, required_scale, version, max_acts.get(row.row.feature))
+            );
+
+            return features;
+        } else {
+            return [];
+        }
+    })
+    .catch((error) => {
+        console.error("Error fetching data:", error);
+        return [];
     });
 }
 
-export async function get_feature(layer: number, probe_layer: number, alpha: number, required_scale: number, feature_number: number, version: string): Promise<Feature[]> {
-    const url = build_url(version, layer, 0, 1, feature_number);
-    const response = axios.get(url);
+function make_empty_explanation(): SelfExplanations {
+    return {
+        selfe_explanations: [],
+        selfe_scales: [],
+        scales: [],
+        self_similarity: [],
+        entropy: [],
+        cross_entropy: [],
+        optimal_scale: 0.0,
+        original_idx: [],
+        selection_metric: [],
+    };
+}
 
-    return response.then((res) => {
-        console.log(res.data);
+function row_to_feature_maxacts_only(row: any, layer: number, probe_layer: number, alpha: number, required_scale: number, version: string, max_acts: any): Feature {
+    const selfe_meaning = make_empty_explanation();
+    const selfe_repeat = make_empty_explanation();
+    const [max_act_examples, max_act_values] = process_max_acts(max_acts);
 
-        const features: Feature[] = res.data.rows.map((row: any) => row_to_feature(row.row, layer, probe_layer, alpha, required_scale, version));
-        return features;
+    return {
+        layer: layer,
+        feature: row.feature,
+        autoint_explanation: "",
+        neuronpedia_link: `https://www.neuronpedia.org/gemma-2b${layer === 12 ? '-it' : ''}/${layer}-res-jb/${row.feature}`,
+        max_act_examples: max_act_examples,
+        max_act_values: max_act_values,
+        selfe_meaning: selfe_meaning,
+        selfe_repeat: selfe_repeat,
+    };
+}
+
+export function get_feature(layer: number, probe_layer: number, alpha: number, required_scale: number, feature_number: number, version: string): Promise<Feature[]> {
+    const url = build_url(version, layer, 0, 1, feature_number, false);
+    const url_maxacts = build_url(version, layer, 0, 1, feature_number, true);
+    console.log(url);
+
+    const requests = [axios.get(url)];
+
+    if (version.startsWith("our")) {
+        requests.push(axios.get(url_maxacts));
+    }
+
+    return Promise.allSettled(requests)
+    .then((results) => {
+        const responseResult = results[0];
+        const maxActsResult = results[1];
+
+        let response = null;
+        let max_acts_response = null;
+
+        if (responseResult && responseResult.status === "fulfilled") {
+            response = responseResult.value;
+        }
+
+        if (maxActsResult && maxActsResult.status === "fulfilled") {
+            max_acts_response = maxActsResult.value;
+        }
+
+        if (response) {
+            let max_acts: any = null;
+            if (max_acts_response) {
+                max_acts = process_max_acts_respone(max_acts_response.data);
+            }
+
+            const features: Feature[] = response.data.rows.map((row: any) =>
+                row_to_feature(row.row, layer, probe_layer, alpha, required_scale, version, max_acts ? max_acts.get(row.row.feature) : null)
+            );
+
+            return features;
+        } else if (max_acts_response) {
+
+            
+            const max_acts = process_max_acts_respone(max_acts_response.data);
+
+            const features: Feature[] = max_acts_response.data.rows.map((row: any) =>
+                row_to_feature_maxacts_only(row.row, layer, probe_layer, alpha, required_scale, version, max_acts.get(row.row.feature))
+            );
+
+            return features;
+        } else {
+            return [];
+        }
+    })
+    .catch((error) => {
+        console.error("Error fetching data:", error);
+        return [];
     });
 }
